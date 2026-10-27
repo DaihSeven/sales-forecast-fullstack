@@ -5,9 +5,10 @@
 import { View, Text, Button, FlatList, Pressable } from 'react-native';
 import { useLoja } from '../controller/LojaController';
 import { cores, estilos } from './estilos';
+import { formatarPreco } from './formatar';
 
 export default function ProdutosScreen({ navigation }) {
-  const { produtos } = useLoja();
+  const { produtos, carregando } = useLoja();
 
   console.log('[ProdutosScreen] Renderizando | total de produtos:', produtos.length);
 
@@ -46,7 +47,7 @@ export default function ProdutosScreen({ navigation }) {
       >
         <Text style={estilos.itemNome}>{item.nome}</Text>
         <Text style={estilos.itemDetalhe}>
-          R$ {item.preco.toFixed(2).replace('.', ',')} por {item.unidade}
+          {formatarPreco(item.preco)} por {item.unidade}
         </Text>
       </Pressable>
     );
@@ -60,10 +61,12 @@ export default function ProdutosScreen({ navigation }) {
       keyExtractor={(item) => item.id}
       renderItem={desenharProduto}
       ListHeaderComponent={cabecalho}
-      // Mensagem mostrada quando a lista está vazia
+      // Mensagem mostrada quando a lista está vazia (ou ainda carregando)
       ListEmptyComponent={
         <Text style={estilos.vazio}>
-          Nenhum produto ainda. Cadastre o primeiro para começar a registrar vendas.
+          {carregando
+            ? 'Carregando…'
+            : 'Nenhum produto ainda. Cadastre o primeiro para começar a registrar vendas.'}
         </Text>
       }
     />

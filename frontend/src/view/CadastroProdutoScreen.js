@@ -14,8 +14,9 @@ export default function CadastroProdutoScreen({ navigation }) {
   const [unidade, setUnidade] = useState('unidade');
   const [erro, setErro] = useState('');
 
-  function salvar() {
-    const resultado = adicionarProduto({ nome, preco, unidade });
+  // async porque o controller grava no model, que devolve Promise
+  async function salvar() {
+    const resultado = await adicionarProduto({ nome, preco, unidade });
 
     if (!resultado.ok) {
       console.log('[Cadastro] Erro de validação:', resultado.erro);

@@ -3,60 +3,75 @@
 // os dados, gravam no model e atualizam o estado para a tela redesenhar.
 // Usamos o Context do próprio React para que todas as abas enxerguem os
 // mesmos produtos e vendas (não é Redux, é recurso nativo do React).
+// As funções do model são assíncronas (preparadas para o SQLite), por isso
+// usamos async/await e um estado "carregando" enquanto os dados chegam.
 
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { listarProdutos, criarProduto } from '../model/produtoModel';
 import { listarVendas, criarVenda } from '../model/vendaModel';
+import { validarProduto, validarVenda } from './validacoes';
+import { totalVendido } from './calculos';
 
 const LojaContext = createContext(null);
 
-// Converte o texto digitado em número; aceita "8,50" ou "8.50"
-function textoParaNumero(texto) {
-  return parseFloat(String(texto).replace(',', '.'));
-}
-
 export function LojaProvider({ children }) {
-  const [produtos, setProdutos] = useState(listarProdutos());
-  const [vendas, setVendas] = useState(listarVendas());
+  const [produtos, setProdutos] = useState([]);
+  const [vendas, setVendas] = useState([]);
+  const [carregando, setCarregando] = useState(true);
 
-  // Recebe os textos do formulário e devolve { ok, erro }
-  function adicionarProduto({ nome, preco, unidade }) {
-    const precoNumero = textoParaNumero(preco);
-
-    console.log('[Controller] Tentando salvar produto:', { nome, preco, precoNumero, unidade });
-
-    if (nome.trim() === '') {
-      return { ok: false, erro: 'Informe o nome do produto.' };
+  // Carregamento inicial: roda uma vez só, quando o app abre ([] = sem dependências)
+  useEffect(() => {
+    async function carregarDados() {
+      try {
+        const [listaProdutos, listaVendas] = await Promise.all([listarProdutos(), listarVendas()]);
+        setProdutos(listaProdutos);
+        setVendas(listaVendas);
+        console.log('[Controller] Dados carregados:', listaProdutos.length, 'produtos,', listaVendas.length, 'vendas');
+      } catch (erro) {
+        console.log('[Controller] Erro ao carregar dados:', erro);
+      } finally {
+        setCarregando(false);
+      }
     }
-    if (isNaN(precoNumero) || precoNumero <= 0) {
-      return { ok: false, erro: 'Informe um preço maior que zero, por exemplo 8,50.' };
+    carregarDados();
+  }, []);
+
+  // Recebe os textos do formulário e devolve (via Promise) { ok, erro }
+  async function adicionarProduto({ nome, preco, unidade }) {
+    console.log('[Controller] Tentando salvar produto:', { nome, preco, unidade });
+
+    const validacao = validarProduto({ nome, preco, unidade });
+    if (!validacao.ok) {
+      return validacao;
     }
 
-    const produto = criarProduto({
-      nome: nome.trim(),
-      preco: precoNumero,
-      unidade: unidade.trim() || 'unidade',
-    });
-    setProdutos(listarProdutos());
-    return { ok: true, produto };
+    try {
+      const produto = await criarProduto(validacao.dados);
+      setProdutos(await listarProdutos());
+      return { ok: true, produto };
+    } catch (erro) {
+      console.log('[Controller] Erro ao salvar produto:', erro);
+      return { ok: false, erro: 'Não foi possível salvar o produto. Tente novamente.' };
+    }
   }
 
-  // Recebe o id do produto escolhido e a quantidade digitada; devolve { ok, erro }
-  function registrarVenda(produtoId, quantidade) {
-    const quantidadeNumero = textoParaNumero(quantidade);
+  // Recebe o id do produto escolhido e a quantidade digitada; devolve (via Promise) { ok, erro }
+  async function registrarVenda(produtoId, quantidade) {
+    console.log('[Controller] Tentando registrar venda:', { produtoId, quantidade });
 
-    console.log('[Controller] Tentando registrar venda:', { produtoId, quantidade, quantidadeNumero });
-
-    if (!produtoId) {
-      return { ok: false, erro: 'Escolha um produto.' };
-    }
-    if (isNaN(quantidadeNumero) || quantidadeNumero <= 0) {
-      return { ok: false, erro: 'Informe uma quantidade maior que zero.' };
+    const validacao = validarVenda(produtoId, quantidade);
+    if (!validacao.ok) {
+      return validacao;
     }
 
-    const venda = criarVenda({ produtoId, quantidade: quantidadeNumero });
-    setVendas(listarVendas());
-    return { ok: true, venda };
+    try {
+      const venda = await criarVenda(validacao.dados);
+      setVendas(await listarVendas());
+      return { ok: true, venda };
+    } catch (erro) {
+      console.log('[Controller] Erro ao registrar venda:', erro);
+      return { ok: false, erro: 'Não foi possível registrar a venda. Tente novamente.' };
+    }
   }
 
   function buscarProduto(id) {
@@ -64,13 +79,19 @@ export function LojaProvider({ children }) {
   }
 
   // Soma das quantidades vendidas de um produto (usado na tela de detalhe)
-  function totalVendido(produtoId) {
-    return vendas
-      .filter((v) => v.produtoId === produtoId)
-      .reduce((soma, v) => soma + v.quantidade, 0);
+  function totalVendidoDoProduto(produtoId) {
+    return totalVendido(vendas, produtoId);
   }
 
-  const valor = { produtos, vendas, adicionarProduto, registrarVenda, buscarProduto, totalVendido };
+  const valor = {
+    produtos,
+    vendas,
+    carregando,
+    adicionarProduto,
+    registrarVenda,
+    buscarProduto,
+    totalVendido: totalVendidoDoProduto,
+  };
 
   return <LojaContext.Provider value={valor}>{children}</LojaContext.Provider>;
 }

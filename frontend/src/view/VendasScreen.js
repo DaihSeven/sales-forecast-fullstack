@@ -5,9 +5,10 @@ import { useRef, useState } from 'react';
 import { View, Text, TextInput, Button, ScrollView, Pressable, Animated } from 'react-native';
 import { useLoja } from '../controller/LojaController';
 import { cores, estilos } from './estilos';
+import { formatarNumero } from './formatar';
 
 export default function VendasScreen() {
-  const { produtos, vendas, registrarVenda } = useLoja();
+  const { produtos, vendas, carregando, registrarVenda } = useLoja();
 
   const [produtoId, setProdutoId] = useState(null);
   const [quantidade, setQuantidade] = useState('');
@@ -34,8 +35,9 @@ export default function VendasScreen() {
     ]).start();
   }
 
-  function registrar() {
-    const resultado = registrarVenda(produtoId, quantidade);
+  // async porque o controller grava no model, que devolve Promise
+  async function registrar() {
+    const resultado = await registrarVenda(produtoId, quantidade);
 
     if (!resultado.ok) {
       console.log('[Vendas] Erro de validação:', resultado.erro);
@@ -44,12 +46,23 @@ export default function VendasScreen() {
     }
 
     console.log('[Vendas] Venda registrada:', resultado.venda);
-    setMensagem(`Venda registrada: ${quantidade} ${produtoEscolhido.unidade} de ${produtoEscolhido.nome}`);
+    // Mostra a quantidade que foi gravada (já convertida), não o texto digitado
+    const quantidadeGravada = formatarNumero(resultado.venda.quantidade);
+    setMensagem(`Venda registrada: ${quantidadeGravada} ${produtoEscolhido.unidade} de ${produtoEscolhido.nome}`);
     setQuantidade('');
     animarConfirmacao();
   }
 
   console.log('[VendasScreen] Renderizando | produto escolhido:', produtoId, '| vendas:', vendas.length);
+
+  // Enquanto o controller carrega os dados, mostra um aviso
+  if (carregando) {
+    return (
+      <View style={[estilos.raiz, estilos.conteudo]}>
+        <Text style={estilos.vazio}>Carregando…</Text>
+      </View>
+    );
+  }
 
   // Sem produtos não há o que vender
   if (produtos.length === 0) {

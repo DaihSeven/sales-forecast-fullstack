@@ -4,6 +4,7 @@
 import { View, Text, ScrollView } from 'react-native';
 import { useLoja } from '../controller/LojaController';
 import { estilos } from './estilos';
+import { formatarPreco, formatarNumero } from './formatar';
 
 export default function DetalheProdutoScreen({ route }) {
   const { produtoId } = route.params;
@@ -29,9 +30,7 @@ export default function DetalheProdutoScreen({ route }) {
       <View>
         <View style={estilos.detalheLinha}>
           <Text style={estilos.detalheRotulo}>Preço</Text>
-          <Text style={estilos.detalheValor}>
-            R$ {produto.preco.toFixed(2).replace('.', ',')}
-          </Text>
+          <Text style={estilos.detalheValor}>{formatarPreco(produto.preco)}</Text>
         </View>
         <View style={estilos.detalheLinha}>
           <Text style={estilos.detalheRotulo}>Vendido por</Text>
@@ -40,7 +39,7 @@ export default function DetalheProdutoScreen({ route }) {
         <View style={estilos.detalheLinha}>
           <Text style={estilos.detalheRotulo}>Total vendido</Text>
           <Text style={estilos.detalheValor}>
-            {String(vendido).replace('.', ',')} {produto.unidade}
+            {formatarNumero(vendido)} {produto.unidade}
           </Text>
         </View>
       </View>

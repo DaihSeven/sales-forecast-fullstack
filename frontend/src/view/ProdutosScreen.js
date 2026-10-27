@@ -4,18 +4,22 @@
 
 import { View, Text, Button, FlatList, Pressable } from 'react-native';
 import { useLoja } from '../controller/LojaController';
-import { cores, estilos } from './estilos';
+import { usePreferencias } from '../controller/PreferenciasController';
+import { useTema } from './tema';
 import { formatarPreco } from './formatar';
+import ErroCarregamento from './ErroCarregamento';
 
 export default function ProdutosScreen({ navigation }) {
-  const { produtos, carregando } = useLoja();
+  const { produtos, carregando, erroCarregamento } = useLoja();
+  const { nomeLoja } = usePreferencias(); // nome salvo na tela de Configurações
+  const { cores, estilos } = useTema();
 
   console.log('[ProdutosScreen] Renderizando | total de produtos:', produtos.length);
 
   // Cabeçalho da lista: título, resumo e botão de cadastro
   const cabecalho = (
     <View style={{ gap: 12 }}>
-      <Text style={estilos.titulo}>Padaria do Bairro</Text>
+      <Text style={estilos.titulo}>{nomeLoja}</Text>
       <Text style={estilos.subtitulo}>
         Registre suas vendas e veja quanto deve vender na próxima semana.
       </Text>
@@ -29,7 +33,7 @@ export default function ProdutosScreen({ navigation }) {
 
       <Button
         title="Cadastrar produto"
-        color={cores.principal}
+        color={cores.botao}
         onPress={() => navigation.navigate('CadastroProduto')}
       />
     </View>
@@ -61,13 +65,17 @@ export default function ProdutosScreen({ navigation }) {
       keyExtractor={(item) => item.id}
       renderItem={desenharProduto}
       ListHeaderComponent={cabecalho}
-      // Mensagem mostrada quando a lista está vazia (ou ainda carregando)
+      // Mensagem mostrada quando a lista está vazia (ou carregando, ou com erro)
       ListEmptyComponent={
-        <Text style={estilos.vazio}>
-          {carregando
-            ? 'Carregando…'
-            : 'Nenhum produto ainda. Cadastre o primeiro para começar a registrar vendas.'}
-        </Text>
+        erroCarregamento ? (
+          <ErroCarregamento />
+        ) : (
+          <Text style={estilos.vazio}>
+            {carregando
+              ? 'Carregando…'
+              : 'Nenhum produto ainda. Cadastre o primeiro para começar a registrar vendas.'}
+          </Text>
+        )
       }
     />
   );

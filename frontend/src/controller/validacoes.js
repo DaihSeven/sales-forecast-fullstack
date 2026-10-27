@@ -46,3 +46,14 @@ export function validarVenda(produtoId, quantidade) {
 
   return { ok: true, dados: { produtoId, quantidade: quantidadeNumero } };
 }
+
+// Preferências da tela de Configurações: nome da loja e tema
+export function validarPreferencias({ nomeLoja, tema }) {
+  if (typeof nomeLoja !== 'string' || nomeLoja.trim() === '') {
+    return { ok: false, erro: 'Informe o nome da loja.' };
+  }
+  if (tema !== 'claro' && tema !== 'escuro') {
+    return { ok: false, erro: 'Escolha o tema claro ou escuro.' };
+  }
+  return { ok: true, dados: { nomeLoja: nomeLoja.trim(), tema } };
+}

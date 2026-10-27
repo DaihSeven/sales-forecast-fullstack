@@ -1,7 +1,7 @@
 // Tela de registro de vendas: escolher o produto, digitar a quantidade e
 // registrar. Ao confirmar, uma faixa verde aparece e some usando Animated.
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -13,16 +13,23 @@ import {
   useAnimatedValue,
 } from 'react-native';
 import { useLoja } from '../controller/LojaController';
-import { cores, estilos } from './estilos';
+import { useTema } from './tema';
 import { formatarNumero } from './formatar';
+import ErroCarregamento from './ErroCarregamento';
 
 export default function VendasScreen() {
-  const { produtos, vendas, carregando, registrarVenda } = useLoja();
+  const { produtos, vendas, carregando, erroCarregamento, registrarVenda } = useLoja();
+  const { cores, estilos } = useTema();
 
   const [produtoId, setProdutoId] = useState(null);
   const [quantidade, setQuantidade] = useState('');
   const [erro, setErro] = useState('');
   const [mensagem, setMensagem] = useState('');
+
+  // Proteção contra toque duplo (mesma ideia do cadastro de produto):
+  // o estado desabilita o botão; a ref barra toques no mesmo instante
+  const [salvando, setSalvando] = useState(false);
+  const travaSalvar = useRef(false);
 
   // Valores animados: useAnimatedValue cria o valor uma vez e mantém o mesmo
   // entre renderizações (substitui o useRef(new Animated.Value()).current)
@@ -45,25 +52,46 @@ export default function VendasScreen() {
     ]).start();
   }
 
-  // async porque o controller grava no model, que devolve Promise
+  // async porque o controller grava no model (SQLite), que devolve Promise
   async function registrar() {
-    const resultado = await registrarVenda(produtoId, quantidade);
-
-    if (!resultado.ok) {
-      console.log('[Vendas] Erro de validação:', resultado.erro);
-      setErro(resultado.erro);
+    if (travaSalvar.current) {
+      console.log('[Vendas] Toque ignorado: gravação em andamento');
       return;
     }
+    travaSalvar.current = true;
+    setSalvando(true);
 
-    console.log('[Vendas] Venda registrada:', resultado.venda);
-    // Mostra a quantidade que foi gravada (já convertida), não o texto digitado
-    const quantidadeGravada = formatarNumero(resultado.venda.quantidade);
-    setMensagem(`Venda registrada: ${quantidadeGravada} ${produtoEscolhido.unidade} de ${produtoEscolhido.nome}`);
-    setQuantidade('');
-    animarConfirmacao();
+    try {
+      const resultado = await registrarVenda(produtoId, quantidade);
+
+      if (!resultado.ok) {
+        console.log('[Vendas] Erro:', resultado.erro);
+        setErro(resultado.erro);
+        return;
+      }
+
+      console.log('[Vendas] Venda registrada:', resultado.venda);
+      // Mostra a quantidade que foi gravada (já convertida), não o texto digitado
+      const quantidadeGravada = formatarNumero(resultado.venda.quantidade);
+      setMensagem(`Venda registrada: ${quantidadeGravada} ${produtoEscolhido.unidade} de ${produtoEscolhido.nome}`);
+      setQuantidade('');
+      animarConfirmacao();
+    } finally {
+      travaSalvar.current = false;
+      setSalvando(false);
+    }
   }
 
   console.log('[VendasScreen] Renderizando | produto escolhido:', produtoId, '| vendas:', vendas.length);
+
+  // Se o banco não abriu, mostra o erro com o botão "Tentar novamente"
+  if (erroCarregamento) {
+    return (
+      <View style={[estilos.raiz, estilos.conteudo]}>
+        <ErroCarregamento />
+      </View>
+    );
+  }
 
   // Enquanto o controller carrega os dados, mostra um aviso
   if (carregando) {
@@ -120,7 +148,12 @@ export default function VendasScreen() {
         {erro !== '' && <Text style={estilos.erro}>{erro}</Text>}
 
         <View style={estilos.botoes}>
-          <Button title="Registrar venda" color={cores.principal} onPress={registrar} />
+          <Button
+            title={salvando ? 'Salvando…' : 'Registrar venda'}
+            color={cores.botao}
+            onPress={registrar}
+            disabled={salvando}
+          />
         </View>
 
         {/* Faixa de confirmação animada (fica invisível com opacidade 0) */}

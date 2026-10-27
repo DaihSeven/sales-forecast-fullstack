@@ -18,8 +18,10 @@ export function LojaProvider({ children }) {
   const [produtos, setProdutos] = useState([]);
   const [vendas, setVendas] = useState([]);
   const [carregando, setCarregando] = useState(true);
+  const [erroCarregamento, setErroCarregamento] = useState('');
+  const [tentativa, setTentativa] = useState(0); // muda para carregar de novo
 
-  // Carregamento inicial: roda uma vez só, quando o app abre ([] = sem dependências)
+  // Carregamento inicial: roda quando o app abre e a cada "Tentar novamente"
   useEffect(() => {
     async function carregarDados() {
       try {
@@ -29,12 +31,21 @@ export function LojaProvider({ children }) {
         console.log('[Controller] Dados carregados:', listaProdutos.length, 'produtos,', listaVendas.length, 'vendas');
       } catch (erro) {
         console.log('[Controller] Erro ao carregar dados:', erro);
+        setErroCarregamento('Não foi possível abrir os dados da loja.');
       } finally {
         setCarregando(false);
       }
     }
     carregarDados();
-  }, []);
+  }, [tentativa]);
+
+  // Chamado pelo botão "Tentar novamente" quando o carregamento falha
+  function tentarNovamente() {
+    console.log('[Controller] Tentando carregar de novo');
+    setErroCarregamento('');
+    setCarregando(true);
+    setTentativa((anterior) => anterior + 1);
+  }
 
   // Recebe os textos do formulário e devolve (via Promise) { ok, erro }
   async function adicionarProduto({ nome, preco, unidade }) {
@@ -87,6 +98,8 @@ export function LojaProvider({ children }) {
     produtos,
     vendas,
     carregando,
+    erroCarregamento,
+    tentarNovamente,
     adicionarProduto,
     registrarVenda,
     buscarProduto,

@@ -1,11 +1,16 @@
-// Cores e estilos compartilhados por todas as telas (antes ficavam no App.js)
+// Cores e estilos compartilhados por todas as telas.
+// Há duas paletas (tema claro e escuro) com os mesmos nomes de cor; os
+// estilos são gerados a partir da paleta escolhida. As telas pegam o
+// resultado com o hook useTema() (ver tema.js).
 
 import { StyleSheet } from 'react-native';
 
-export const cores = {
+export const coresClaro = {
   fundo: '#F4F7FA',
   superficie: '#FFFFFF',
   principal: '#1F3A5F', // azul-ardósia: cor da marca da loja
+  botao: '#1F3A5F', // fundo dos botões (o texto do botão é sempre branco)
+  botaoSecundario: '#5B6878', // botões como "Cancelar"
   texto: '#1B2430',
   textoSuave: '#5B6878',
   borda: '#D5DDE6',
@@ -14,7 +19,21 @@ export const cores = {
   sucessoFundo: '#E3F4EA',
 };
 
-export const estilos = StyleSheet.create({
+export const coresEscuro = {
+  fundo: '#121821',
+  superficie: '#1C2530',
+  principal: '#8FB3E0', // azul claro: legível sobre o fundo escuro
+  botao: '#3B6EA8', // mais escuro que o principal para o texto branco ficar legível
+  botaoSecundario: '#4A5767',
+  texto: '#E6EBF1',
+  textoSuave: '#9AA7B6',
+  borda: '#2E3A48',
+  erro: '#F2B8B5',
+  sucesso: '#7FD3A3',
+  sucessoFundo: '#173A28',
+};
+
+export const criarEstilos = (cores) => StyleSheet.create({
   raiz: { flex: 1, backgroundColor: cores.fundo },
   conteudo: { padding: 20, gap: 12 },
   titulo: { fontSize: 26, fontWeight: '700', color: cores.principal },

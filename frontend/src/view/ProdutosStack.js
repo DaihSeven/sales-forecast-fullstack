@@ -5,11 +5,12 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ProdutosScreen from './ProdutosScreen';
 import DetalheProdutoScreen from './DetalheProdutoScreen';
 import CadastroProdutoScreen from './CadastroProdutoScreen';
-import { cores } from './estilos';
+import { useTema } from './tema';
 
 const Stack = createNativeStackNavigator();
 
 export default function ProdutosStack() {
+  const { cores } = useTema();
   return (
     <Stack.Navigator screenOptions={{ headerTintColor: cores.principal }}>
       <Stack.Screen name="ListaProdutos" component={ProdutosScreen} options={{ title: 'Produtos' }} />

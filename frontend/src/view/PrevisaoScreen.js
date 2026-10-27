@@ -3,9 +3,10 @@
 // de demanda da próxima semana para cada produto.
 
 import { View, Text } from 'react-native';
-import { estilos } from './estilos';
+import { useTema } from './tema';
 
 export default function PrevisaoScreen() {
+  const { estilos } = useTema();
   console.log('[PrevisaoScreen] Renderizando placeholder');
 
   return (

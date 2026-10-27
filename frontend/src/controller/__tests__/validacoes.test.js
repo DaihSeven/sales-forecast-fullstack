@@ -1,6 +1,11 @@
 // Testes das validações dos formulários (rodar com: npm test)
 
-import { textoParaNumero, validarProduto, validarVenda } from '../validacoes';
+import {
+  textoParaNumero,
+  validarProduto,
+  validarVenda,
+  validarPreferencias,
+} from '../validacoes';
 
 describe('textoParaNumero', () => {
   test('aceita vírgula como separador decimal', () => {
@@ -74,6 +79,29 @@ describe('validarVenda', () => {
     expect(validarVenda('123', quantidade)).toEqual({
       ok: false,
       erro: 'Informe uma quantidade maior que zero.',
+    });
+  });
+});
+
+describe('validarPreferencias', () => {
+  test('preferências válidas devolvem o nome sem espaços nas pontas', () => {
+    expect(validarPreferencias({ nomeLoja: '  Mercadinho da Ana ', tema: 'escuro' })).toEqual({
+      ok: true,
+      dados: { nomeLoja: 'Mercadinho da Ana', tema: 'escuro' },
+    });
+  });
+
+  test.each(['', '   ', undefined])('recusa nome da loja %p', (nomeLoja) => {
+    expect(validarPreferencias({ nomeLoja, tema: 'claro' })).toEqual({
+      ok: false,
+      erro: 'Informe o nome da loja.',
+    });
+  });
+
+  test('recusa tema desconhecido (ex.: valor antigo salvo no aparelho)', () => {
+    expect(validarPreferencias({ nomeLoja: 'Loja', tema: 'azul' })).toEqual({
+      ok: false,
+      erro: 'Escolha o tema claro ou escuro.',
     });
   });
 });

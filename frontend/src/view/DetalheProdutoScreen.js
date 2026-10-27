@@ -3,12 +3,13 @@
 
 import { View, Text, ScrollView } from 'react-native';
 import { useLoja } from '../controller/LojaController';
-import { estilos } from './estilos';
+import { useTema } from './tema';
 import { formatarPreco, formatarNumero } from './formatar';
 
 export default function DetalheProdutoScreen({ route }) {
   const { produtoId } = route.params;
   const { buscarProduto, totalVendido } = useLoja();
+  const { estilos } = useTema();
   const produto = buscarProduto(produtoId);
 
   console.log('[DetalheProduto] Abrindo produto:', produtoId, produto);

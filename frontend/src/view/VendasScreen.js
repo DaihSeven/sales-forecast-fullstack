@@ -1,8 +1,17 @@
 // Tela de registro de vendas: escolher o produto, digitar a quantidade e
 // registrar. Ao confirmar, uma faixa verde aparece e some usando Animated.
 
-import { useRef, useState } from 'react';
-import { View, Text, TextInput, Button, ScrollView, Pressable, Animated } from 'react-native';
+import { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  Button,
+  ScrollView,
+  Pressable,
+  Animated,
+  useAnimatedValue,
+} from 'react-native';
 import { useLoja } from '../controller/LojaController';
 import { cores, estilos } from './estilos';
 import { formatarNumero } from './formatar';
@@ -15,9 +24,10 @@ export default function VendasScreen() {
   const [erro, setErro] = useState('');
   const [mensagem, setMensagem] = useState('');
 
-  // Valores animados: useRef mantém o mesmo valor entre renderizações
-  const opacidade = useRef(new Animated.Value(0)).current;
-  const escala = useRef(new Animated.Value(0.8)).current;
+  // Valores animados: useAnimatedValue cria o valor uma vez e mantém o mesmo
+  // entre renderizações (substitui o useRef(new Animated.Value()).current)
+  const opacidade = useAnimatedValue(0);
+  const escala = useAnimatedValue(0.8);
 
   const produtoEscolhido = produtos.find((p) => p.id === produtoId);
 
